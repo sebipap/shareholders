@@ -1,0 +1,14 @@
+{
+  "client": "Cloud Arbitration LTDA",
+  "shareholders": [
+    {
+      "name": "Henrique Carvalho Parreira",
+      "percentage": 30.0
+    },
+    {
+      "name": "Leonardo Rolla Goulart Borja",
+      "percentage": 30.0
+    }
+  ],
+  "missing_docs": false
+}

@@ -1,0 +1,14 @@
+{
+  "client": "Stake Brazil Ltda",
+  "shareholders": [
+    {
+      "name": "Bijan Tehrani",
+      "percentage": 40.0
+    },
+    {
+      "name": "Edward James Macarthur Craven",
+      "percentage": 40.0
+    }
+  ],
+  "missing_docs": false
+}

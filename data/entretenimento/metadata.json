@@ -1,0 +1,14 @@
+{
+  "client": "Upper entretenimento LTDA",
+  "shareholders": [
+    {
+      "name": "Diogo Luis Cicchetto Vicentin",
+      "percentage": 45.0
+    },
+    {
+      "name": "Rafael Silva Provenzano",
+      "percentage": 45.0
+    }
+  ],
+  "missing_docs": false
+}

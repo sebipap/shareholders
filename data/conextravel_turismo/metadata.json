@@ -1,0 +1,14 @@
+{
+  "client": "CONEXTRAVEL TURISMO LTDA",
+  "shareholders": [
+    {
+      "name": "Fernando Silva Santos",
+      "percentage": 50.0
+    },
+    {
+      "name": "Michelle Martinussi",
+      "percentage": 50.0
+    }
+  ],
+  "missing_docs": false
+}

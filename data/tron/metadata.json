@@ -1,0 +1,14 @@
+{
+  "client": "Tron",
+  "shareholders": [
+    {
+      "name": "REILLY WASSYL RANGEL",
+      "percentage": 50.0
+    },
+    {
+      "name": "CARLA DE BRITO BELOHUBY",
+      "percentage": 50.0
+    }
+  ],
+  "missing_docs": false
+}

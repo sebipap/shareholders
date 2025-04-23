@@ -1,0 +1,14 @@
+{
+  "client": "Viagens e Turismo",
+  "shareholders": [
+    {
+      "name": "DENISE SINISCALCHI SCIACCA AMADO",
+      "percentage": 50.0
+    },
+    {
+      "name": "SANDRA SINISCALCHI SCIACCA",
+      "percentage": 50.0
+    }
+  ],
+  "missing_docs": false
+}
