@@ -13,6 +13,10 @@ export function readFile(path: string[], options?: { encoding?: BufferEncoding }
 	return fs.readFileSync(pathString(path), { encoding: 'utf-8' });
 }
 
+export function readFileBase64(path: string[]) {
+	return fs.readFileSync(pathString(path)).toString('base64');
+}
+
 export function fileToObject<T extends ZodSchema>(path: string[], schema: T): z.infer<T> {
 	const data = JSON.parse(readFile(path))
 	return schema.parse(data)
