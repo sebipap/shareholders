@@ -1,5 +1,4 @@
-import type { CompaniesShareholdersFromDocument, Shareholder } from './types';
-
+import type { CompaniesWithConfidence, Shareholder } from './types';
 import type { CompanyEquity } from './types';
 
 export function companyEquityToString(c: CompanyEquity) {
@@ -8,14 +7,14 @@ export function companyEquityToString(c: CompanyEquity) {
     .join('\n\t\t')}`;
 }
 
-export function documentsShareholdersToString(
-  docs: string[],
-  shareholdersFromDocuments: CompaniesShareholdersFromDocument[]
+export function docsShareholdersToString(
+  documents: string[],
+  companiesWithConfidence: CompaniesWithConfidence[]
 ) {
-  return shareholdersFromDocuments
+  return companiesWithConfidence
     .map(
-      (r, i) =>
-        `📁${docs[i]}:\n\t${r.companies
+      ({ companies }, index) =>
+        `📁${documents[index]}:\n\t${companies
           .map(companyEquityToString)
           .join('\n\t')}`
     )
@@ -23,7 +22,6 @@ export function documentsShareholdersToString(
 }
 
 export function accuracyToString(accuracy: number) {
-  // render a bar made of emojis
   const bar = '🟩'.repeat(Math.floor(accuracy * 10));
   const empty = '⬜'.repeat(10 - Math.floor(accuracy * 10));
   return `
@@ -34,5 +32,5 @@ export function accuracyToString(accuracy: number) {
 export function actualVsPredictedToString(a: Shareholder, b: Shareholder) {
   return `✅ ${a.name}:${a.percentage}% (predicted) - ${
     b.percentage
-  }% (actual) = ${Math.abs(a.percentage - b.percentage)}%`;
+  }% (actual) = ${Math.abs((a.percentage || 0) - (b.percentage || 0))}%`;
 }

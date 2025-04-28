@@ -24,3 +24,33 @@ Write a program that:
 - Only people (not companies) should be considered as ultimate beneficial owners.
 - Business names may be fuzzy; use the `client` field in `metadata.json`. You are allowed to change the client name in metadata.json for the purposes of the exercise.
 - BONUS: If documents for a company are missing, set a `missing_docs` flag as done in the metadata.json files.
+
+# How to Run
+
+## Prerequisites
+
+1. Install Bun (if not already installed)
+   ```bash
+   curl -fsSL https://bun.sh/install | bash
+   ```
+
+2. Set up OpenAI API key
+   - Create a .env file in the root directory
+   - Add your OpenAI API key:
+   ```
+   OPENAI_API_KEY=your_api_key_here
+   ```
+
+## Installation
+
+3. Install dependencies
+   ```bash
+   bun install
+   ```
+
+## Running the Application
+
+4. Start the application
+   ```bash
+   bun start
+   ```

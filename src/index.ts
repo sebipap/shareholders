@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import analyzeAllCompanies from './company/analyze';
+import shareholderDetectionAccuracy from './company/average-shareholder-accuracy';
 
 dotenv.config();
-analyzeAllCompanies();
+shareholderDetectionAccuracy();

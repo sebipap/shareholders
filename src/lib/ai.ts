@@ -1,5 +1,5 @@
 import { openai } from '@ai-sdk/openai';
-import { generateObject, streamObject } from 'ai';
+import { generateObject } from 'ai';
 import { z } from 'zod';
 import { readFileBase64 } from './file';
 
@@ -43,4 +43,27 @@ export async function askPdf<T extends z.ZodSchema>({
   });
   console.log(`✅📁 Done reading ${document}`);
   return object;
+}
+
+export async function askObject<T extends z.ZodSchema>({
+  object,
+  question,
+  schema,
+}: {
+  object: any;
+  question: string;
+  schema: T;
+}): Promise<z.infer<T>> {
+  const result = await generateObject({
+    model: openai('gpt-4.1'),
+    schema,
+    system: question,
+    messages: [
+      {
+        role: 'user',
+        content: JSON.stringify(object, null, 2),
+      },
+    ],
+  });
+  return result.object;
 }

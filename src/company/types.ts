@@ -20,15 +20,15 @@ export const companyEquitySchema = z.object({
   shareholders: z.array(shareholderSchema),
 });
 
-export const companiesShareholdersFromDocumentSchema = z.object({
+export const companiesWithConfidenceSchema = z.object({
   companies: z.array(companyEquitySchema),
   confidence: z
     .number()
     .describe('The confidence score of the answer, between 0 and 1'),
 });
 
-export type CompaniesShareholdersFromDocument = z.infer<
-  typeof companiesShareholdersFromDocumentSchema
+export type CompaniesWithConfidence = z.infer<
+  typeof companiesWithConfidenceSchema
 >;
 
 export type Shareholder = z.infer<typeof shareholderSchema>;
