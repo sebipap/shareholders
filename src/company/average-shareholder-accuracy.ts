@@ -97,10 +97,6 @@ async function shareholdersFromDocs(
   companyFolderName: string,
   client: string
 ) {
-  // const documentsShareholders = await Promise.all(
-  //   documents.map(document => shareholdersFromFile(document, companyFolderName))
-  // );
-
   let documentsShareholders: CompaniesWithConfidence[] = [];
 
   for (const document of documents) {
