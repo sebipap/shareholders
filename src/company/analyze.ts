@@ -1,64 +1,89 @@
-import { z } from "zod";
-import { askPdf } from "../lib/ai";
-import { directoryContent, fileToObject } from "../lib/file";
-import { average } from "../lib/math";
-import { metadataSchema, shareholderSchema, shareholderWithExplanationSchema, type Shareholder } from "./types";
-import { generateObject } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { openai } from '@ai-sdk/openai';
+import { generateObject } from 'ai';
+import { z } from 'zod';
+import { askPdf } from '../lib/ai';
+import { directoryContent, fileToObject } from '../lib/file';
+import { average } from '../lib/math';
+import { normalizeName } from '../lib/utils';
+import {
+  accuracyToString,
+  actualVsPredictedToString,
+  companyEquityToString,
+  documentsShareholdersToString,
+} from './log';
+import {
+  companiesShareholdersFromDocumentSchema,
+  metadataSchema,
+  shareholderWithExplanationSchema,
+  type CompaniesShareholdersFromDocument,
+  type Shareholder,
+} from './types';
 
 const MIN_SHAREHOLDER_PERCENTAGE = 25;
 
 export default async function analyzeAllCompanies() {
-	const companies = directoryContent(['data']);
-	const accuracies = await Promise.all([companies[2]].map(shareholderDetectionAccuracy))
-	return average(accuracies)
+  console.log('🔍 Reading companies...');
+  const companies = directoryContent(['data']);
+  console.log(`🌟Found:\n\t${companies.join('\n\t')}`);
+  const accuracies = await Promise.all(
+    companies.map(shareholderDetectionAccuracy)
+  );
+  const averageAccuracy = average(accuracies);
+  console.log(accuracyToString(averageAccuracy));
 }
 
-async function shareholderDetectionAccuracy(companyFolderName: string) {
-	const { client, shareholders } = fileToObject(['data', companyFolderName, "metadata.json"], metadataSchema);
-	const docs = directoryContent(['data', companyFolderName, "docs"]);
-	const shareholdersFromDocs = await inferShareholders(docs, companyFolderName, client);
+async function shareholderDetectionAccuracy(folder: string) {
+  console.log(`🔍 Reading company ${folder}...`);
 
-	const bigShareholders = shareholdersFromDocs.filter(({ percentage }) => percentage > MIN_SHAREHOLDER_PERCENTAGE);
+  const companyDirectory = ['data', folder];
+  const docs = directoryContent([...companyDirectory, 'docs']);
+  const metadata = fileToObject(
+    [...companyDirectory, 'metadata.json'],
+    metadataSchema
+  );
+  const shareholders = await shareholdersFromDocs(
+    docs,
+    folder,
+    metadata.client
+  );
 
-	console.log(`_____${companyFolderName.toUpperCase()}_____`)
-	console.log(JSON.stringify({ bigShareholders, shareholders }, null, 2))
+  const bigShareholders = shareholders.filter(
+    ({ percentage }) => percentage && percentage > MIN_SHAREHOLDER_PERCENTAGE
+  );
 
-	// TODO: add recursive equity holders logic
-	// 3. Compare your extracted shareholders and percentages with the `shareholders` in `metadata.json`.
-	// 4. Calculate an accuracy score for each company (e.g., percentage of correct shareholders).
-	// 5. Output the average accuracy score across all companies.
+  console.log(
+    companyEquityToString({ company: metadata.client, shareholders })
+  );
 
-	const accuracy = calculateAccuracy(shareholders ?? [], bigShareholders)
+  const accuracy = calculateAccuracy(
+    metadata.shareholders ?? [],
+    bigShareholders
+  );
 
-	console.log(`Accuracy: ${accuracy}`)
+  console.log(accuracyToString(accuracy));
 
-	return accuracy
+  return accuracy;
 }
 
-async function inferShareholders(docs: string[], companyFolderName: string, client: string) {
-	const results = await Promise.all(docs.map(document => askPdf({
-		question: `Your goal is to identify every company named in the documents and, for each one, list every shareholder—whether a natural person or another legal entity—together with that shareholder's direct equity percentage.`,
-		schema: z.object({
-			companies: z.array(z.object({
-				company: z.string(),
-				shareholders: z.array(shareholderSchema),
-			})),
-			confidence: z.number().describe('The confidence score of the answer, between 0 and 1'),
-		}), document,
-		companyFolderName
-	})));
+function getShareholderFromFile(document: string, companyFolderName: string) {
+  return askPdf({
+    question: `Your goal is to identify every company named in the documents and, for each one, list every shareholder—whether a natural person or another legal entity—together with that shareholder's direct equity percentage.`,
+    schema: companiesShareholdersFromDocumentSchema,
+    document,
+    companyFolderName,
+  });
+}
 
-	// console.log(JSON.stringify(results, null, 2))
-
-
-
-	const { object } = await generateObject({
-		model: openai('gpt-4.1'),
-		schema: z.object({
-			shareholders: z.array(shareholderWithExplanationSchema),
-		}),
-		system: `
+async function ultimateShareholders(
+  shareholdersFromDocuments: CompaniesShareholdersFromDocument[],
+  client: string
+) {
+  const { object } = await generateObject({
+    model: openai('gpt-4.1'),
+    schema: z.object({
+      shareholders: z.array(shareholderWithExplanationSchema),
+    }),
+    system: `
 		Given a list of objects with companies (including their shareholders and their percentages) and a confidence score,
 		return the closest match to the actual equity holders for the company ${client}.
 		Only return values for people shareholders, not companies.
@@ -67,40 +92,55 @@ async function inferShareholders(docs: string[], companyFolderName: string, clie
 		If Person A owns 50% of Company B, and Company B owns 50% of Company C, then Person A owns 25% of Company C.
 		Also add an explanation of how you came to the conclusion that this is the correct shareholder and percentage.
 		`,
-		messages: [
-			{
-				role: 'user',
-				content: JSON.stringify(results, null, 2)
-			}
-		]
-	})
-	return object.shareholders
+    messages: [
+      {
+        role: 'user',
+        content: JSON.stringify(shareholdersFromDocuments, null, 2),
+      },
+    ],
+  });
+  return object.shareholders;
 }
 
-function normalizeName(name: string) {
-	return name.trim().toLowerCase();
+async function shareholdersFromDocs(
+  docs: string[],
+  companyFolderName: string,
+  client: string
+) {
+  const documentsShareholders = await Promise.all(
+    docs.map(document => getShareholderFromFile(document, companyFolderName))
+  );
+
+  console.log(documentsShareholdersToString(docs, documentsShareholders));
+  return ultimateShareholders(documentsShareholders, client);
 }
 
-function calculateAccuracy(truth: Shareholder[], guess: Shareholder[]) {
-	// Create a set of unique shareholder names (case-insensitive) present in either list
-	const names = new Set<string>([...truth.map(t => normalizeName(t.name)), ...guess.map(g => normalizeName(g.name))]);
+function calculateAccuracy(actual: Shareholder[], predicted: Shareholder[]) {
+  // Create a set of unique shareholder names (case-insensitive) present in either list
+  const names = new Set<string>([
+    ...actual.map(t => normalizeName(t.name)),
+    ...predicted.map(g => normalizeName(g.name)),
+  ]);
 
-	if (names.size === 0) return 1; // No shareholders in either list → perfect match
+  if (names.size === 0) return 1; // No shareholders in either list → perfect match
 
-	let correct = 0;
-	const PERCENTAGE_TOLERANCE = 0.5; // percentage points
+  let correct = 0;
+  const PERCENTAGE_TOLERANCE = 0.5; // percentage points
 
-	for (const name of names) {
-		const truthHolder = truth.find(t => normalizeName(t.name) === name);
-		const guessHolder = guess.find(g => normalizeName(g.name) === name);
+  for (const name of names) {
+    const actualHolder = actual.find(t => normalizeName(t.name) === name);
+    const predictedHolder = predicted.find(g => normalizeName(g.name) === name);
 
-		if (truthHolder && guessHolder) {
-			const percentageDiff = Math.abs(truthHolder.percentage - guessHolder.percentage);
-			if (percentageDiff <= PERCENTAGE_TOLERANCE) {
-				correct++;
-			}
-		}
-	}
+    if (actualHolder?.percentage && predictedHolder?.percentage) {
+      const percentageDiff = Math.abs(
+        actualHolder.percentage - predictedHolder.percentage
+      );
+      if (percentageDiff <= PERCENTAGE_TOLERANCE) {
+        correct++;
+      }
+      console.log(actualVsPredictedToString(predictedHolder, actualHolder));
+    }
+  }
 
-	return correct / names.size;
+  return correct / names.size;
 }
